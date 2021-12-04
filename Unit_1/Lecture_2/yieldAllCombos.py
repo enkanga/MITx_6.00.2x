@@ -4,6 +4,7 @@ Created on Sun Nov 28 20:01:32 2021
 
 @author: ENkanga
 """
+
 '''
 Write a generator that returns every arrangement of items such that each is in one or none of two different bags. 
 Each combination should be given as a tuple of two lists, the first being the items in bag1, and the second being the items in bag2.
