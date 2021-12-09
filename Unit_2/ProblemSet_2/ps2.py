@@ -100,7 +100,7 @@ class RectangularRoom(object):
         pos: a Position
         """
         for p in self.tiles.keys():
-            if p.getX() == math.floor(pos.getX()) and p.getY() == math.floor(pos.getY()):
+            if math.floor(p.getX()) == math.floor(pos.getX()) and math.floor(p.getY()) == math.floor(pos.getY()):
                 self.tiles[p] = 'C'
 
     def isTileCleaned(self, m, n):
@@ -114,7 +114,7 @@ class RectangularRoom(object):
         returns: True if (m, n) is cleaned, False otherwise
         """
         for p in self.tiles.keys():
-            if p.getX() == m and p.getY() == n:
+            if math.floor(p.getX()) == m and math.floor(p.getY()) == n:
                 return self.tiles[p] == 'C'
     
     def getNumTiles(self):
@@ -139,7 +139,7 @@ class RectangularRoom(object):
 
         returns: a Position object.
         """
-        return Position(math.floor(random.uniform(0, self.width)), math.floor(random.uniform(0, self.height)))
+        return Position(random.uniform(0, self.width), random.uniform(0, self.height))
 
     def isPositionInRoom(self, pos):
         """
@@ -148,8 +148,8 @@ class RectangularRoom(object):
         pos: a Position object.
         returns: True if pos is in the room, False otherwise.
         """
-        for p in self.tiles:
-            if p.getX() == math.floor(pos.getX()) and p.getY() == math.floor(pos.getY()):
+        for p in self.tiles.keys():
+            if math.floor(p.getX()) == math.floor(pos.getX()) and math.floor(p.getY()) == math.floor(pos.getY()):
                 return True
         return False
 
@@ -177,6 +177,7 @@ class Robot(object):
         self.speed = speed
         self.room = room
         self.setRobotPosition(room.getRandomPosition())
+        self.room.cleanTileAtPosition(self.getRobotPosition())
         self.setRobotDirection(random.randint(0, 359))
 
     def getRobotPosition(self):
@@ -238,16 +239,14 @@ class StandardRobot(Robot):
         Move the robot to a new position and mark the tile it is on as having
         been cleaned.
         """
-        while True:
-            new_pos = self.getRobotPosition().getNewPosition(self.getRobotDirection(), self.speed)
-            if self.room.isPositionInRoom(new_pos):
-                break
+        new_pos = self.getRobotPosition().getNewPosition(self.getRobotDirection(), self.speed)
         
-        self.setRobotPosition(new_pos)
-        self.room.cleanTileAtPosition(self.getRobotPosition())
-          
-    
+        if self.room.isPositionInRoom(new_pos) and not(new_pos.getX() == self.getRobotPosition().getX() and new_pos.getY() == self.getRobotPosition().getY()):
+            self.setRobotPosition(new_pos)
+            self.room.cleanTileAtPosition(self.getRobotPosition())
 
+        else:
+            self.setRobotDirection(random.randint(0, 359))
 
 # Uncomment this line to see your implementation of StandardRobot in action!
 # testRobotMovement(StandardRobot, RectangularRoom)
@@ -272,10 +271,32 @@ def runSimulation(num_robots, speed, width, height, min_coverage, num_trials,
     robot_type: class of robot to be instantiated (e.g. StandardRobot or
                 RandomWalkRobot)
     """
-    raise NotImplementedError
+    time_steps = []
+
+    for trial in range(num_trials):
+        # anim = ps2_visualize.RobotVisualization(num_robots, width, height)
+        room = RectangularRoom(width, height)
+        
+        robots = []
+        for i in range(num_robots):
+            robots.append(robot_type(room, speed))
+        
+        time_step = 0
+        while room.getNumCleanedTiles() / room.getNumTiles() < min_coverage:
+            # anim.update(room, robots)
+            for rbt in robots:
+                rbt.updatePositionAndClean()
+            time_step += 1
+            
+        
+        time_steps.append(time_step)
+        # anim.done()
+        
+    return sum(time_steps) / len(time_steps)
+
 
 # Uncomment this line to see how much your simulation takes on average
-##print(runSimulation(1, 1.0, 10, 10, 0.75, 30, StandardRobot))
+# print(runSimulation(3, 1.0, 10, 10, .75, 30, StandardRobot))
 
 
 # === Problem 5
@@ -291,7 +312,16 @@ class RandomWalkRobot(Robot):
         Move the robot to a new position and mark the tile it is on as having
         been cleaned.
         """
-        raise NotImplementedError
+        new_pos = self.getRobotPosition().getNewPosition(self.getRobotDirection(), self.speed)
+        
+        if self.room.isPositionInRoom(new_pos) and not(new_pos.getX() == self.getRobotPosition().getX() and new_pos.getY() == self.getRobotPosition().getY()):
+            self.setRobotPosition(new_pos)
+            self.room.cleanTileAtPosition(self.getRobotPosition())
+        
+        self.setRobotDirection(random.randint(0, 359))
+
+# testRobotMovement(RandomWalkRobot, RectangularRoom)
+# print(runSimulation(3, 1.0, 10, 10, .75, 30, RandomWalkRobot))
 
 
 def showPlot1(title, x_label, y_label):
@@ -303,8 +333,8 @@ def showPlot1(title, x_label, y_label):
     times2 = []
     for num_robots in num_robot_range:
         print("Plotting", num_robots, "robots...")
-        times1.append(runSimulation(num_robots, 1.0, 20, 20, 0.8, 20, StandardRobot))
-        times2.append(runSimulation(num_robots, 1.0, 20, 20, 0.8, 20, RandomWalkRobot))
+        times1.append(runSimulation(num_robots, 1.0, 10, 10, 0.8, 20, StandardRobot))
+        times2.append(runSimulation(num_robots, 1.0, 10, 10, 0.8, 20, RandomWalkRobot))
     pylab.plot(num_robot_range, times1)
     pylab.plot(num_robot_range, times2)
     pylab.title(title)
@@ -321,12 +351,12 @@ def showPlot2(title, x_label, y_label):
     aspect_ratios = []
     times1 = []
     times2 = []
-    for width in [10, 20, 25, 50]:
-        height = 300//width
+    for width in [1, 2, 3, 5]:
+        height = 30//width
         print("Plotting cleaning time for a room of width:", width, "by height:", height)
         aspect_ratios.append(float(width) / height)
-        times1.append(runSimulation(2, 1.0, width, height, 0.8, 200, StandardRobot))
-        times2.append(runSimulation(2, 1.0, width, height, 0.8, 200, RandomWalkRobot))
+        times1.append(runSimulation(2, 1.0, width, height, 0.8, 20, StandardRobot))
+        times2.append(runSimulation(2, 1.0, width, height, 0.8, 20, RandomWalkRobot))
     pylab.plot(aspect_ratios, times1)
     pylab.plot(aspect_ratios, times2)
     pylab.title(title)
@@ -343,13 +373,10 @@ def showPlot2(title, x_label, y_label):
 #
 # 1) Write a function call to showPlot1 that generates an appropriately-labeled
 #     plot.
-#
-#       (... your call here ...)
-#
+# showPlot1('Avg Time For 1 - 10 Robots to Clean 80% Of A Room', 'Number of Robots', 'Avg Time')
 
 #
 # 2) Write a function call to showPlot2 that generates an appropriately-labeled
 #     plot.
-#
-#       (... your call here ...)
-#
+# showPlot2('Avg Time For Two Robots To Clean 80% of Variously Shaped Rooms', 'Room Size', 'Avg Time')
+
