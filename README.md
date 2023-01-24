@@ -1,5 +1,5 @@
 # MITx_6.00.2x
-Repository for coding exercises/problem sets for edX's MITx 6.00.2x Introduction to Computational Thinking and Data Science course (Oct - Dec 2021)
+Repository for coding exercises/problem sets for edX's MITx 6.00.2x Introduction to Computational Thinking and Data Science course
 
 https://www.edx.org/course/introduction-to-computational-thinking-and-data-4
 
